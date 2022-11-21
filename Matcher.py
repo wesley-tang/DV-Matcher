@@ -15,12 +15,6 @@ def createMatchups():
 		#3: Recipient References
 		csvin = csv.reader(tsvin, delimiter=',')
 
-		nameInd = 1
-		tagStart = 10
-		tagEnd = 25
-		recPrefInd = 27
-		recPref2Ind = 29
-
 		matched = []
 
 		matchups = []
