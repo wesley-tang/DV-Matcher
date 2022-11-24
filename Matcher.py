@@ -30,8 +30,10 @@ def createMatchups():
 
 		remainingRecips = values.copy()
 
+		random.shuffle(values)
+
 		for row in values:
-			print("Matching: " + row[nameInd])
+			#print("Matching: " + row[nameInd])
 
 			candidates = remainingRecips.copy()
 
@@ -44,20 +46,22 @@ def createMatchups():
 				if len(candidates) == 0:
 					candidates = remainingRecips.copy()
 					if idealMatchings:
-						print("Dropping Ideal Matchings")
+						# print("Dropping Ideal Matchings")
 						idealMatchings = False
 					elif not useSecondaryDrawPrefs:
-						print("Using secondary Draw Pref")
+						# print("Using secondary Draw Pref")
 						idealMatchings = True
 						useSecondaryDrawPrefs = True
 					elif not useSecondaryRecPref:
 						useSecondaryRecPref = True
 					else:
-						print("All possible candidates exhausted. Matchup Failed.")
+						print("\nAll possible candidates exhausted. Matchup Failed.")
+						print(str(len(remainingRecips)) + " left")
+						print("Failed on: " + row[nameInd])
+						print("Restrictions:" + str(generatePrefArray(row[tagStart:tagEnd+1], "Do NOT Want", firstRow)))
 						tsvin.close()
 						return False
 						
-
 				# Choose person who is not matched
 				candidateRow = random.randint(0, len(candidates)-1)
 
@@ -65,7 +69,7 @@ def createMatchups():
 					del candidates[candidateRow]
 					continue
 
-				print("Candidate: " + candidates[candidateRow][nameInd])
+				#print("Candidate: " + candidates[candidateRow][nameInd])
 
 				# Choose person with appropriate preferences
 				santaPref = generatePrefArray(row[tagStart:tagEnd+1], "Highly Want", firstRow)
@@ -77,16 +81,20 @@ def createMatchups():
 				recipPref = candidates[candidateRow][recPrefInd].split(", ")
 
 				if useSecondaryRecPref:
-					recipPref = recipPref + candidates[candidateRow][recPref2Ind].split(", ")
+					recipPref = candidates[candidateRow][recPref2Ind].split(", ")
+					
+				avoidDrawCheck = list(set(santaAvoidDraw) & set(recipPref))
 
+				# Don't match if they have any forbidden values
+				if len(avoidDrawCheck) > 0:
+					del candidates[candidateRow]
+					continue
+					
 				# Find a matchup by seeing what the draw pref and receive pref have in common
 				matchingPrefs = list(set(santaPref) & set(recipPref))
 
 				minMatchingPrefs = min(len(santaPref), len(recipPref))
-
-				if idealMatchings and minMatchingPrefs > 1:
-					minMatchingPrefs -= 1
-				else:
+				if not idealMatchings:
 					minMatchingPrefs = 1
 
 				if len(matchingPrefs) < minMatchingPrefs:
@@ -98,7 +106,7 @@ def createMatchups():
 				matchupsDbg.append((row[nameInd], candidates[candidateRow][nameInd], santaPref, recipPref, str(len(matchingPrefs)) + "/" + str(min(len(santaPref), len(recipPref)))))
 				remainingRecips.remove(candidates[candidateRow])
 				matched.append(candidates[candidateRow][nameInd])
-				print((row[nameInd], candidates[candidateRow][nameInd], matchingPrefs))
+				# print((row[nameInd], candidates[candidateRow][nameInd], matchingPrefs))
 				break
 
 		with open('matchups.txt', 'w+') as f:
